@@ -1,4 +1,4 @@
-# (C) synctwin GmbH 2022 
+# (C) SyncTwin GmbH 2022 
 # license: GPL3
 
 from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade

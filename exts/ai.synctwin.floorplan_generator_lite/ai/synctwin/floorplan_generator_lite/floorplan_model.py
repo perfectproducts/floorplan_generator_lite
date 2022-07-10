@@ -1,4 +1,4 @@
-# (C) synctwin GmbH 2022 
+# (C) SyncTwin GmbH 2022 
 # license: GPL3 
 
 from pydantic import BaseModel, Field
