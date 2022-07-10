@@ -1,3 +1,6 @@
+# (C) synctwin GmbH 2022 
+# license: GPL3
+
 import omni.ext
 import omni.ui as ui
 import os 

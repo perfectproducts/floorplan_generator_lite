@@ -1,3 +1,6 @@
+# (C) synctwin GmbH 2022 
+# license: GPL3 
+
 from pydantic import BaseModel, Field
 from typing import List 
 from pxr import Usd, Kind 

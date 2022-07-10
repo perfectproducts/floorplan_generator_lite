@@ -1,3 +1,6 @@
+# (C) synctwin GmbH 2022 
+# license: GPL3
+
 from .floorplan_model import FloorPlanModel
 from pxr import Usd
 from pxr import Kind

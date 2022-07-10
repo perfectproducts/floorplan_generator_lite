@@ -1,3 +1,6 @@
+# (C) synctwin GmbH 2022 
+# license: GPL3
+
 from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade
 from .floorplan_customdata import FloorPlanCustomData
 from .floorplan_model import FloorPlanModel
