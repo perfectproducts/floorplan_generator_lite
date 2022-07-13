@@ -64,7 +64,7 @@ class FloorPlanGeneratorLite(omni.ext.IExt):
 
     def on_startup(self, ext_id):        
         self._SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-        self._window = ui.Window("SyncTwin Floor Plan Generator Lite", width=400, height=400)
+        self._window = ui.Window("SyncTwin Floor Plan Generator (Lite)", width=400, height=400)
         
         self._model = FloorPlanModel()
 
