@@ -1,29 +1,58 @@
-# (C) SyncTwin GmbH 2022 
-# license: GPL3
+from pxr import Gf, UsdGeom, Usd, Sdf, UsdShade
+import omni.usd as ou
+import unicodedata
+from .common import Location3d
+import re
 
-from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade
-from .floorplan_customdata import FloorPlanCustomData
-from .floorplan_model import FloorPlanModel
 
-class FloorPlanBuilder:
+class GeoUtils:
+    
+    def __init__(self, stage = None) -> None:
+        self._stage = stage
 
-    def build(self, stage : Usd.Stage, model : FloorPlanModel):
-        self._model = model 
-        cd = FloorPlanCustomData(self._model)
-        cd.write(stage)
-        root_path = FloorPlanCustomData.ROOT_PATH
-        UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
+    
+    def open_or_create_stage(self, path, clear_exist=True) -> Usd.Stage:
+        layer = Sdf.Layer.FindOrOpen(path)
+        if not layer:
+            layer = Sdf.Layer.CreateNew(path)
+        elif clear_exist:
+            layer.Clear()
+            
+        if layer:
+            self._stage = Usd.Stage.Open(layer)
+            return self._stage
+        else:
+            return None
 
-        modelRoot = UsdGeom.Xform.Define(stage, root_path)
-        Usd.ModelAPI(modelRoot).SetKind(Kind.Tokens.component)
-        map_path = f"{root_path}/map"
-        billboard = UsdGeom.Mesh.Define(stage, map_path)
-        sx = self._model.width 
-        sy = self._model.depth
-        left = -sx/2
-        right = sx/2
-        top = -sy/2 
-        bottom = sy/2
+    def create_material(self, material_path, name, diffuse_color) -> UsdShade.Material:
+        #print(f"mat: {material_path} {name}" )
+        if not self._stage.GetPrimAtPath(material_path + "/Looks"):
+            #print(f"mat: {material_path}")
+            self._stage.DefinePrim(material_path + "/Looks", "Scope")
+        material_path += "/Looks/" + name
+        
+        material_path = ou.get_stage_next_free_path(
+            self._stage, material_path, False
+        )
+        material = UsdShade.Material.Define(self._stage, material_path)
+
+        shader_path = material_path + "/Shader"
+        shader = UsdShade.Shader.Define(self._stage, shader_path)
+        shader.CreateIdAttr("UsdPreviewSurface")
+        shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(diffuse_color)
+        
+        material.CreateSurfaceOutput().ConnectToSource(shader, "surface")
+        
+
+        return material
+
+    def create_textured_rect_mesh(self, root_path, sx,sy, image_url):        
+        stage = self._stage
+        billboard = UsdGeom.Mesh.Define(stage, f"{root_path}/mesh")
+        left = 0
+        right = sx
+        top = 0 
+        bottom = sy
         billboard.CreatePointsAttr([(left, top, 0), (right, top, 0), (right, bottom, 0), (left, bottom, 0)])
         billboard.CreateFaceVertexCountsAttr([4])
         billboard.CreateFaceVertexIndicesAttr([0,1,2,3])
@@ -47,7 +76,7 @@ class FloorPlanBuilder:
 
         diffuseTextureSampler = UsdShade.Shader.Define(stage,f'{material_path}/diffuseTexture')
         diffuseTextureSampler.CreateIdAttr('UsdUVTexture')
-        diffuseTextureSampler.CreateInput('file', Sdf.ValueTypeNames.Asset).Set(self._model.image_url)
+        diffuseTextureSampler.CreateInput('file', Sdf.ValueTypeNames.Asset).Set(image_url)
         diffuseTextureSampler.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(stReader.ConnectableAPI(), 'result')
         diffuseTextureSampler.CreateOutput('rgb', Sdf.ValueTypeNames.Float3)
         pbrShader.CreateInput("diffuseColor", 
@@ -59,4 +88,6 @@ class FloorPlanBuilder:
 
         stReader.CreateInput('varname',Sdf.ValueTypeNames.Token).ConnectToSource(stInput)
         UsdShade.MaterialBindingAPI(billboard).Bind(material)
-        return root_path
+
+    def location_to_vec3f(pos3d:Location3d)->Gf.Vec3f:
+        return Gf.Vec3f(pos3d.x, pos3d.y, pos3d.z)

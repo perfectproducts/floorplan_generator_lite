@@ -16,7 +16,7 @@ repository = ""
 category = "manufacturing"
 
 # Keywords for the extension
-keywords = ["kit", "SyncTwin"]
+keywords = ["kit", "manufacturing", "SyncTwin"]
 
 # Preview image is shown in "Overview" of Extensions window. Screenshot of an extension might be a good preview image.
 preview_image = "data/preview.png"
@@ -31,3 +31,6 @@ icon = "data/logo.png"
 # Main python module this extension provides
 [[python.module]]
 name = "ai.synctwin.floorplan_generator_lite"
+[python.pipapi]
+requirements = ['pdf2image']
+use_online_index = true
