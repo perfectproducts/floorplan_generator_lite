@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 from typing import List, Dict , Optional
 from pxr import Usd, Kind,Gf
 from PIL import Image
-
+import carb
+import omni.client 
+import io 
 
 class FloorPlanImagePoint(BaseModel):
     x : int = 0
@@ -58,7 +60,13 @@ class FloorPlanModel(BaseModel):
         return self.poi("Reference_B", "Reference") 
 
     def set_image_url(self, url):
-        img = Image.open(url)
+        result, _, content = omni.client.read_file(url)
+        if result != omni.client.Result.OK:
+            carb.log_error(f"Can't read image file {url}, error code: {result}")
+            return
+
+
+        img = Image.open(io.BytesIO(memoryview(content).tobytes()))
         sx, sy = img.size
         if sx == 0 or sy == 0:
             print("# invalid image")

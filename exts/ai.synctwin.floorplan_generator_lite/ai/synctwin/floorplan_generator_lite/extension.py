@@ -11,6 +11,7 @@ from omni.kit.pipapi import install
 import tempfile
 import gc
 from pdf2image import convert_from_path
+import tempfile 
 
 # Python code to read image
 
@@ -111,22 +112,47 @@ class FloorPlanGeneratorLite(omni.ext.IExt):
         self._model.set_image_url(url)
         self.refresh()
 
-    def on_image_file_selected(self, dialog, dirname, filename: str):        
+    def on_image_file_selected(self, dialog, dirname:str, filename: str):        
         print(f"selected {filename}")
         filepath = f"{dirname}/{filename}"
         if filename.endswith(".pdf"):
+            is_remote = dirname.startswith("omniverse://")
+            if is_remote:
+                temp_dir = "c:/temp"                
+                temp_name= f"{temp_dir}/{filename}"
+                r = omni.client.copy(filepath, temp_name, behavior=omni.client.CopyBehavior.OVERWRITE)
+                print(f"copy tmp {temp_name} {r}")
+                if r != omni.client.Result.OK:
+                    print("## could not copy file")
+                    return 
+                filepath = temp_name 
+
             print("convert pdf...")
             path = f"{self._local_extension_path}/poppler-0.68.0/bin"
             if not path in os.environ["PATH"]:
                 os.environ["PATH"] += os.pathsep + path
-            outfile= f"{dirname}/{filename}.png"
+            
+            basename = os.path.splitext(filename)[0].replace(".","_")
 
-            images_from_path = convert_from_path(filepath, output_folder=dirname)
+            if is_remote:
+                output_folder = temp_dir
+            else:
+                output_folder = dirname
+
+            outfile = f"{output_folder}/{basename}.png"
+            images_from_path = convert_from_path(filepath, output_folder=output_folder)
+
             images_from_path[0].save(outfile)
             print(f"written to {outfile}")    
-            filepath = outfile 
+            if is_remote: 
+                upload_file = f"{dirname}/{basename}.png"
+                r = omni.client.copy(outfile, upload_file,  behavior=omni.client.CopyBehavior.OVERWRITE)
+                print(f"upload {r}")
+                filepath = upload_file 
+            else:
+                filepath = outfile 
              
-        self._image_file = filename 
+        self._image_file = filename
         self.set_image_url(filepath)
         dialog.hide()            
         # we'd like to create the map immediately after image selection 

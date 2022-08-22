@@ -63,7 +63,8 @@ class FloorPlanSemantics:
         return root_path 
 
     def read(self, stage:Usd.Stage, prim_path:str="")->FloorPlanModel:
-        
+        if not stage:
+            return None 
         root_path = FloorPlanSemantics.DEFAULT_ROOT_PATH if prim_path == "" else prim_path 
         root_prim = stage.GetPrimAtPath(root_path)
         if not root_prim:
