@@ -7,6 +7,7 @@ from pxr import Gf, Kind, Sdf, Usd, UsdGeom, UsdShade, Tf
 from .floorplan_semantics import FloorPlanSemantics, FloorPlanImagePointSemantics
 from .floorplan_model import FloorPlanModel, FloorPlanImagePoint
 from .floorplan_simpleviz import FloorPlanSimpleViz
+from .utils.geo_utils import GeoUtils
 from omni.kit.pipapi import install
 import tempfile
 import gc
@@ -357,7 +358,10 @@ class FloorPlanGeneratorLite(omni.ext.IExt):
 
         context = omni.usd.get_context()        
         context.new_stage()
+
         stage = context.get_stage()
+        gb = GeoUtils(stage)
+        gb.create_lighting()
         self._stage_listener = Tf.Notice.Register(Usd.Notice.ObjectsChanged, self._notice_changed, stage)
         UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)        
         # get scale 
@@ -367,7 +371,7 @@ class FloorPlanGeneratorLite(omni.ext.IExt):
         omni.kit.commands.execute(
             "SelectPrimsCommand", old_selected_paths=[], new_selected_paths=[floor_path], expand_in_stage=True
         )
-
+        
         self.focus_selection()
         self._in_create = False
         self.clear_dirty()        

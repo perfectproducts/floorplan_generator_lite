@@ -3,6 +3,7 @@ import omni.usd as ou
 import unicodedata
 from .common import Location3d
 import re
+import omni.kit.actions.core
 
 
 class GeoUtils:
@@ -23,25 +24,22 @@ class GeoUtils:
             return self._stage
         else:
             return None
+        
+    def create_lighting(self):
+        # add lighting
+        ar = omni.kit.actions.core.get_action_registry()
+        set_lighting_mode_rig = ar.get_action("omni.kit.viewport.menubar.lighting", "set_lighting_mode_rig")
+        set_lighting_mode_rig.execute(2)
 
     def create_material(self, material_path, name, diffuse_color) -> UsdShade.Material:
-        #print(f"mat: {material_path} {name}" )
-        if not self._stage.GetPrimAtPath(material_path + "/Looks"):
-            #print(f"mat: {material_path}")
-            self._stage.DefinePrim(material_path + "/Looks", "Scope")
-        material_path += "/Looks/" + name
-        
-        material_path = ou.get_stage_next_free_path(
-            self._stage, material_path, False
-        )
+        material_path = ou.get_stage_next_free_path(self._stage, material_path, False)
         material = UsdShade.Material.Define(self._stage, material_path)
 
         shader_path = material_path + "/Shader"
         shader = UsdShade.Shader.Define(self._stage, shader_path)
         shader.CreateIdAttr("UsdPreviewSurface")
         shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(diffuse_color)
-        
-        material.CreateSurfaceOutput().ConnectToSource(shader, "surface")
+        material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
         
 
         return material
@@ -57,9 +55,10 @@ class GeoUtils:
         billboard.CreateFaceVertexCountsAttr([4])
         billboard.CreateFaceVertexIndicesAttr([0,1,2,3])
         billboard.CreateExtentAttr([(left, top, 0), (right, bottom, 0)])
-        texCoords = billboard.CreatePrimvar("st",
+        primvars_api = UsdGeom.PrimvarsAPI(billboard)
+        texCoords = primvars_api.CreatePrimvar("primvars:st",
                                             Sdf.ValueTypeNames.TexCoord2fArray,
-                                            UsdGeom.Tokens.varying)
+                                            UsdGeom.Tokens.faceVarying)
         texCoords.Set([(0, 0), (1, 0), (1,1), (0, 1)])
         #--
         material_path = f"{root_path}/map_material"
